@@ -7,6 +7,7 @@ function setErrorMsg(error){
   }
 }
 
+const isDevelopment = false
 export default class Register extends Component{
   state ={
     registerError: null
@@ -21,10 +22,11 @@ export default class Register extends Component{
       let repeatPasswordEncoded = (require('js-htmlencode').htmlEncode(`${this.pwr.value}`)).trim()
       let resultRepeatPassword = document.getElementById('resultRepeatPassword')
       let validation = 0
-
-      console.log('emailClassValue:',emailEncoded)
-      console.log('pwdClassValue:',passwordEncoded)
-      console.log('pwdRepeatClassValue:',repeatPasswordEncoded)
+      if(isDevelopment){
+        console.log('Register-RegisterUser-emailClassValue:',emailEncoded)
+        console.log('Register-RegisterUser-pwdClassValue:',passwordEncoded)
+        console.log('Register-RegisterUser-pwdRepeatClassValue:',repeatPasswordEncoded)
+      }
 
       //Authentication
       function validateEmail(email) {
@@ -51,7 +53,9 @@ export default class Register extends Component{
       } else {
         resultEmail.innerText =require('js-htmlencode').htmlDecode(`${ emailEncoded} is not valid :( `)
         resultEmail.style.color ="red"
-        console.log('resultEmail.innerText',resultEmail.innerText)
+        if(isDevelopment){
+          console.log('Register-RegisterUser-resultEmail.innerText',resultEmail.innerText)
+        }
       }
       //isValidEmail END======
       //isValidPassword BEGIN===
@@ -61,18 +65,25 @@ export default class Register extends Component{
       } else {
         resultPassword.innerText =require('js-htmlencode').htmlDecode(`${ passwordEncoded} is not strong :( `)
         resultPassword.style.color ="red"
-        console.log('resultPassword.innerText',resultPassword.innerText)
+        if(isDevelopment){
+          console.log('Register-RegisterUser-resultPassword.innerText',resultPassword.innerText)
+        }
       }
       //isValidPassword END=====
       //isExactRepeatPassword BEGIN====
       if (passwordsAreEqual(passwordEncoded,repeatPasswordEncoded)) {
         validation++
         resultRepeatPassword.innerText =""
-        console.log('resultRepeatPassword.innerText',resultRepeatPassword.innerText)
+        if(isDevelopment){
+          console.log('Register-RegisterUser-resultRepeatPassword.innerText',resultRepeatPassword.innerText)
+        }
+
       } else {
         resultRepeatPassword.innerText = require('js-htmlencode').htmlDecode(`${ repeatPasswordEncoded} is not the same as the first password :( `)
         resultRepeatPassword.style.color ="red"
-        console.log('resultRepeatPassword.innerText',resultRepeatPassword.innerText)
+        if(isDevelopment){
+          console.log('Register-RegisterUser-resultRepeatPassword.innerText',resultRepeatPassword.innerText)
+        }
       }
       //isExactRepeatPassword END======
 

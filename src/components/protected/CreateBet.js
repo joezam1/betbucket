@@ -1,5 +1,7 @@
 import React, {Component} from 'react'
 import CurrencySelector from './CurrencySelector'
+
+const isDevelopment = false
 export default class CreateBet extends Component{
 
   constructor(props){
@@ -12,21 +14,22 @@ export default class CreateBet extends Component{
   }
 
 createBet(event){
-  console.log('CreateBet-createBet-EventTarget',event.target)
   const tg = event.target
-  console.log('CreateBet-createBet-eventTarget',tg)
   const indexGame = tg.dataset.id
-  console.log('CreateBet-createBet-indexGame',indexGame)
   const playersList = document.getElementsByClassName('selectedPlayerClass')
-  console.log('CreateBet-createBet-selectedPlayerClass',playersList)
   const amountBetList = document.getElementsByClassName('amountBet')
-  console.log('CreateBet-createBet-amountBet',amountBetList[0].value)
+  if(isDevelopment){
+    console.log('CreateBet-createBet-EventTarget',event.target)
+    console.log('CreateBet-createBet-eventTarget',tg)
+    console.log('CreateBet-createBet-indexGame',indexGame)
+    console.log('CreateBet-createBet-selectedPlayerClass',playersList)
+    console.log('CreateBet-createBet-amountBet',amountBetList[0].value)
+  }
   const betPlaced = amountBetList[0].value
   const betPlacedEncoded = (require('js-htmlencode').htmlEncode(betPlaced)).trim()
   const resultValidationSelectedPlayer = document.getElementById('resultValidationSelectedPlayer')
   const resultValidationCurrency = document.getElementById('resultValidationCurrency')
   const resultValidationAmountBet = document.getElementById('resultValidationAmountBet')
-
 
   let playersListLength = playersList.length
   let valueSubIndex = 0
@@ -36,17 +39,22 @@ createBet(event){
   for(let i=0; i<playersListLength; i++){
     if(playersList[i].checked ===true){
         const subId = playersList[i].dataset.subid
-        console.log('CreateBet-createBet-subId',subId)
+
         valueSubIndex =playersList[i].value
-        console.log('CreateBet-createBet-valueSubIndex',valueSubIndex)
+        if(isDevelopment){
+          console.log('CreateBet-createBet-subId',subId)
+          console.log('CreateBet-createBet-valueSubIndex',valueSubIndex)
+        }
         break;
     }
     else{
       playerSelectedCounter++
     }
   }
-  console.log('CreateBet-createBet-playersListLength',playersListLength)
-  console.log('CreateBet-createBet-playerSelectedCounter',playerSelectedCounter)
+  if(isDevelopment){
+    console.log('CreateBet-createBet-playersListLength',playersListLength)
+    console.log('CreateBet-createBet-playerSelectedCounter',playerSelectedCounter)
+  }
   if(playersListLength === playerSelectedCounter){
     errorMessage ='* player Not Selected \n'
     resultValidationSelectedPlayer.innerText = '* player Not Selected \n'
@@ -55,13 +63,13 @@ createBet(event){
   else{
     resultValidationSelectedPlayer.innerText =''
   }
-
-  console.log('CreateBet-createBet-currencyCode',this.state.currencyCode)
+  if(isDevelopment){
+    console.log('CreateBet-createBet-currencyCode',this.state.currencyCode)
+  }
   if(this.state.currencyCode ===''){
     errorMessage += '* Currency Not Selected\n'
     resultValidationCurrency.innerText = '* Currency Not Selected\n'
     resultValidationCurrency.style.color = 'red'
-
   }else{
     resultValidationCurrency.innerText = ''
   }
@@ -76,14 +84,12 @@ createBet(event){
       errorMessage+='* The '+betPlacedEncoded+' Amount is not valid \n'
       resultValidationAmountBet.innerText = '* The '+require('js-htmlencode').htmlDecode(betPlacedEncoded)+' Amount is not valid'
       resultValidationAmountBet.style.color = 'red'
-
     }
     else{
       resultValidationAmountBet.innerText = ''
     }
   }
   //Test for Money END======
-
   if(errorMessage ===''){
     stateBet = 'create'
   }
@@ -95,15 +101,16 @@ createBet(event){
       this.props.onCreatedBet(indexGame, valueSubIndex,this.state.currencyCode, betPlaced, errorMessage, stateBet)
   }
   else{
-
-    console.log('CreateBet-CreateBet-ErrorMessage',errorMessage)
+    if(isDevelopment){
+      console.log('CreateBet-CreateBet-ErrorMessage',errorMessage)
+    }
   }
-
-
 }
 
 currencySelected(value){
-  console.log('currencySel',value)
+  if(isDevelopment){
+    console.log('CreateBet-currencySelected-currencySel',value)
+  }
   this.setState({
     currencyCode: value
   })
@@ -111,54 +118,59 @@ currencySelected(value){
 }
 
   render(){
+
     const radioInLine ={
       position:'relative',
       padding:'20px',
       marginLeft: '20px',
     }
+
     const styleCurrencySelector ={
       float:'left',
       left:30,
       position:'relative',
       top:'20px'
     }
+
     const styleAmountBet ={
       float:'left',
       left:-135,
       position:'relative',
       top:'60px',
     }
+
     const btnPositioning ={
       float:'left',
       position:'relative',
       top:'120px',
       left:-193,
     }
-//==
-const backgroundStyle = {
-  backgroundColor: 'grey',
-  height: 300,
-  opacity:1,
-  position:'absolute',
-  top:0,
-  width:'100%',
-  zIndex:20,
-}
 
-const editWindowStyle = {
-  backgroundColor: 'white',
-  borderWidth: 1,
-  borderColor:'black',
-  height: 250,
-  opacity:1,
-  position:'absolute',
-  top:50,
-  width:200,
-  zIndex:50,
-}
-//==
+    const backgroundStyle = {
+      backgroundColor: 'grey',
+      height: 300,
+      opacity:1,
+      position:'absolute',
+      top:0,
+      width:'100%',
+      zIndex:20,
+    }
 
-    console.log(this.props.playersInGame)
+    const editWindowStyle = {
+      backgroundColor: 'white',
+      borderWidth: 1,
+      borderColor:'black',
+      height: 250,
+      opacity:1,
+      position:'absolute',
+      top:50,
+      width:200,
+      zIndex:50,
+    }
+
+    if(isDevelopment){
+      console.log('CreateBet-render-playersInGame',this.props.playersInGame)
+    }
     return(
       <div>
         <div className='form-group'>

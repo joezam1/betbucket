@@ -1,52 +1,27 @@
 import React, { Component } from 'react';
 import _ from 'lodash'
+import base64 from 'base-64'
+import $ from 'jquery'
+import utf8 from 'utf8'
+
 import DisplayAllGames from './DisplayAllGames'
 import DisplayAllBets from './DisplayAllBets'
-import firebaseDb from '../../config/database'
+import {fbDb} from '../../config/constants'
 import firebase from '../../config/constants'
-const BetsListLocal = firebaseDb.ref('BetsList')
+const BetsListLocal = fbDb.ref('BetsList')
+
+const isDevelopment = false
 export default class App extends Component {
   constructor(props){
     super(props)
-
     this.state ={
+      dataGames:undefined,
       displayGameAndBettingSection: true,
-      games: [
-        {id:1, type:'Tennis', playersInGame:[{subId:1, player:'Roger Federer'},{subId:2, player:'Novak Djokovic'}], text:' Roger Federer vs Novak Djokovic', display:true},
-        {id:2, type:'NRL', playersInGame:[{subId:1, player:'Rabbithos'},{subId:2, player:'Panthers'}], text:' Rabbithos Vs Panthers', display:true},
-        {id:3, type:'Horse Racing', playersInGame:[
-            {subId:1, player:'BIG ORANGE'},
-            {subId:2, player:'OUR IVANHOWE'},
-            {subId:3, player:'CURREN MIROTIC'},
-            {subId:4, player:'BONDI BEACH'},
-            {subId:5, player:'EXOSPHERIC'},
-            {subId:6, player:'HARTNELL'},
-            {subId:7, player:'WHO SHOT THEBARMAN'},
-            {subId:8, player:'WICKLOW BRAVE'},
-            {subId:9, player:'ALMOONQITH'},
-            {subId:10, player:'GALLANTE'},
-            {subId:11, player:'GRAND MARSHALE'},
-            {subId:12, player:'JAMEKA'},
-            {subId:13, player:'HEARTBREAK CITY'},
-            {subId:14, player:'SIR JOHN HAWKWOOD'},
-            {subId:15, player:'EXCESS KNOWLEDGE'},
-            {subId:16, player:'BEAUTIFUL ROMANCE'},
-            {subId:17, player:'ALMANDIN'},
-            {subId:18, player:'ASSIGN'},
-            {subId:19, player:'GREY LION'},
-            {subId:20, player:'OCEANOGRAPHER'},
-            {subId:21, player:'SECRET NUMBER'},
-            {subId:22, player:'PENTATHLON'},
-            {subId:23, player:'QEWY'},
-            {subId:24, player:'ROSE OF VIRGINIA'},
-          ], text:' Melbourne Cup', display:true},
-        {id:4, type:'A-League Soccer', playersInGame:[{subId:1, player:'Wellington Phoenix'},{subId:2, player:'Adelaide United'}], text:' Wellington Phoenix vs Adelaide United', display:true},
-        {id:5, type:'Rugby Union', playersInGame:[{subId:1, player:'Waratahs'},{subId:2, player:'Sharks'}], text:' Waratahs Vs Sharks', display:true},
-        {id:6, type:'Tennis Wimbledon', playersInGame:[{subId:1, player:'A. Sabalenka'},{subId:2, player:'I. Khromacheva'}], text:'A. Sabalenka vs I. Khromacheva', display:true},
-        {id:7, type:'A-League Soccer', playersInGame:[{subId:1, player:'Western Sydney Wanderers FC'},{subId:2, player:'Perth Glory'}], text:'Western Sydney Wanderers FC vs Perth Glory', display:true},
-        {id:8, type:'Rugby Union', playersInGame:[{subId:1, player:'Highlanders'},{subId:2, player:'Melbourne Rebels'}], text:' Highlanders Vs Melbourne Rebels', display:true},
-      ],
-      bets:[]
+      games: [],
+      Bets:[],
+      userEmail:undefined,
+      windowHeight: props.height,
+      windowWidth: props.width,
     }
 
       this.processSelectedGame = this.processSelectedGame.bind(this)
@@ -56,15 +31,19 @@ export default class App extends Component {
       this.processCancellationUpdatedBetMain = this.processCancellationUpdatedBetMain.bind(this)
       this.processDeletedBetMain = this.processDeletedBetMain.bind(this)
       this.processCancellationDeletedBetMain = this.processCancellationDeletedBetMain.bind(this)
+      this.updateDimensions = this.updateDimensions.bind(this)
   }
-  //==Firebase BEGIN=========
+  //==External Calls BEGIN=========
   componentDidMount(){
+    window.addEventListener("resize", this.updateDimensions);
+    //==Firebase BEGIN=========
     BetsListLocal.on('value',snapshot =>{
-      console.log('App-ComponentDidMount-BetsListLocal.snapshot',snapshot.val())
+      if(isDevelopment){
+        console.log('App-ComponentDidMount-BetsListLocal.snapshot',snapshot.val())
+      }
       let betsArrayMap = _.map(snapshot.val(), (bet,id)=>(
          {
            keyId: id,
-           betId:bet.betId,
            gameId:bet.gameId,
            gameName:bet.gameName,
            subIndexPlayer: bet.subIndexPlayer,
@@ -76,22 +55,130 @@ export default class App extends Component {
            editBet:bet.editBet,
          }
       ))
-      console.log('App-ComponentDidMount-BetsArrayMap',betsArrayMap)
+      if(isDevelopment){
+        console.log('App-ComponentDidMount-BetsArrayMap',betsArrayMap)
+      }
       this.setState({
         Bets: betsArrayMap
       })
     })
+    //==Firebase END===========
+    if(isDevelopment){
       console.log('App-ComponentDidMount-this.state',this.state)
-  }
-  //==Firebase END===========
-  processSelectedGame(index){
-    console.log('App-processSelectedBet-buttonIndex',index)
-    const length = this.state.games.length
+    }
+    //==SportsFeedAPIFeed BEGIN======
 
-    console.log('App-processSelectedBet-arrayLength: ',length)
+    this.setState({dataGames: undefined});
+    const username = ''
+    const password = ''
+    const uri = 'https://www.mysportsfeeds.com/api/feed/pull/nba/2017-playoff/full_game_schedule.json'
+    if(isDevelopment){
+      console.log(btoa(username + ":" + password))
+    }
+    $.ajax({
+      type: "GET",
+      url: uri,
+      dataType: 'json',
+      async: false,
+      headers: {
+        "Authorization": "Basic " + btoa(username + ":" + password)
+      },
+      cache: false,
+      success: function(data) {
+        this.setState({dataGames: data.fullgameschedule.gameentry});
+        if(isDevelopment){
+          console.log('componentDidMount.data',data)
+          console.log('componentAfter-data',this.state.dataGames)
+        }
+        //Update Data feed
+        let apiArrayLength = data.fullgameschedule.gameentry.length
+        let localArrayLength = this.state.games.length
+        if(isDevelopment){
+          console.log('App-ComponentDidMount-api array length',apiArrayLength)
+          console.log('App-ComponentDidMount-local array length', localArrayLength)
+        }
+        let counter = 0
+        for(let i=0; i<apiArrayLength; i++){
+          for(let j=0; j<localArrayLength; j++){
+              if(data.fullgameschedule.gameentry[i].id !== this.state.games[j].id){
+                counter++
+              }
+              else{
+                continue;
+              }
+          }
+          if(counter === localArrayLength){
+            let newGame =
+              {
+                id:data.fullgameschedule.gameentry[i].id,
+                type:'NBA',
+                playersInGame:[
+                  {
+                    subId:data.fullgameschedule.gameentry[i].awayTeam.ID,
+                    player:data.fullgameschedule.gameentry[i].awayTeam.City +' '+
+                           data.fullgameschedule.gameentry[i].awayTeam.Name
+                  },
+                  {
+                    subId:data.fullgameschedule.gameentry[i].homeTeam.ID,
+                    player:data.fullgameschedule.gameentry[i].homeTeam.City +' '+
+                           data.fullgameschedule.gameentry[i].homeTeam.Name
+                  }
+                ],
+                date:data.fullgameschedule.gameentry[i].date,
+                location:data.fullgameschedule.gameentry[i].location,
+                time:data.fullgameschedule.gameentry[i].time,
+                text: data.fullgameschedule.gameentry[i].awayTeam.City +' '+
+                      data.fullgameschedule.gameentry[i].awayTeam.Name +' Vs '+
+                      data.fullgameschedule.gameentry[i].homeTeam.City +' '+
+                      data.fullgameschedule.gameentry[i].homeTeam.Name +' - Stadium: '
+                      +data.fullgameschedule.gameentry[i].location+' - on: '
+                      +data.fullgameschedule.gameentry[i].date +' at '
+                      +data.fullgameschedule.gameentry[i].time,
+                display:true,
+              }
+
+              this.state.games.push(newGame)
+            }
+            counter=0
+          }
+          this.setState({
+            games: this.state.games
+          })
+
+      }.bind(this),
+      error: function(xhr, status, err) {
+        console.error(this.props.url, status, err.toString());
+      }.bind(this)
+    });
+    //==SportsFeedAPIFeed END========
+    //==FirebaseUser BEGIN===========
+    var user = firebase.auth().currentUser;
+    if (user) {
+      // User is signed in.
+      this.setState({
+           userEmail: user.email
+       })
+    } else {
+      // No user is signed in.
+    }
+    if(isDevelopment){
+      console.log('App-ComponentDidMount--authUserEmail',this.state.userEmail)
+    }
+    //==FirebaseUser END=============
+  }
+  //==External Calls END===========
+
+  processSelectedGame(index){
+    const length = this.state.games.length
+    if(isDevelopment){
+      console.log('App-processSelectedBet-buttonIndex',index)
+      console.log('App-processSelectedBet-arrayLength: ',length)
+    }
     for(let i=0; i<length ; i++){
-      console.log('App-processSelectedBet-gamesArrayElements ',this.state.games[i])
-      if(this.state.games[i].id === parseInt(index)){
+      if(isDevelopment){
+        console.log('App-processSelectedBet-gamesArrayElements ',this.state.games[i])
+      }
+      if(this.state.games[i].id === index.toString()){
         this.state.games[i].display = true
       }else {
           this.state.games[i].display = false
@@ -101,17 +188,21 @@ export default class App extends Component {
       displayGameAndBettingSection: false,
       games: this.state.games
     })
-    console.log('ProtectedApp-processCreatedNewBetMain- userIsValid')
+    if(isDevelopment){
+      console.log('ProtectedApp-processCreatedNewBetMain-userIsValid')
+    }
   }
 
   processReturnToAllGamesAndBets(status){
-    console.log('App-processReturnToAllGamesAndBets-stateus',status)
     const length = this.state.games.length
-
-    console.log('App-processReturnToAllGamesAndBets-arrayLength: ',length)
+    if(isDevelopment){
+      console.log('App-processReturnToAllGamesAndBets-status',status)
+      console.log('App-processReturnToAllGamesAndBets-arrayLength: ',length)
+    }
     for(let i=0; i<length ; i++){
-      console.log('App-processReturnToAllGamesAndBets-gamesArrayElements ',this.state.games[i])
-
+      if(isDevelopment){
+        console.log('App-processReturnToAllGamesAndBets-gamesArrayElements ',this.state.games[i])
+      }
       this.state.games[i].display = true
     }
     this.setState({
@@ -120,26 +211,31 @@ export default class App extends Component {
     })
   }
 
-
   processCreatedNewBetMain(gameId,subIndexPlayer,currencyCode, amountBet){
     //We Redisplay all the games
     const length = this.state.games.length
-    console.log('App-processCreatedNewBetMain-arrayLength: ',length)
+    if(isDevelopment){
+      console.log('App-processCreatedNewBetMain-arrayLength: ',length)
+    }
     for(let i=0; i<length ; i++){
-      console.log('App-processCreatedNewBetMain-gamesArrayElements ',this.state.games[i])
+      if(isDevelopment){
+        console.log('App-processCreatedNewBetMain-gamesArrayElements ',this.state.games[i])
+      }
       this.state.games[i].display = true
     }
-    console.log('App-processCreatedNewBetMain-gameId', gameId)
+    if(isDevelopment){
+      console.log('App-processCreatedNewBetMain-gameId', gameId)
+    }
     let gamesArrayLength=this.state.games.length
     let gameName = ''
     let playerName = ''
 
     for(let i=0; i<gamesArrayLength;i++){
-      if(this.state.games[i].id=== parseInt(gameId)){
+      if(this.state.games[i].id=== gameId.toString()){
         gameName = this.state.games[i].text
         let lengthPlayersArray = this.state.games[i].playersInGame.length
         for(let a=0; a<lengthPlayersArray; a++){
-            if(this.state.games[i].playersInGame[a].subId ===parseInt(subIndexPlayer)){
+            if(this.state.games[i].playersInGame[a].subId ===subIndexPlayer){
               playerName = this.state.games[i].playersInGame[a].player
               break;
             }
@@ -147,14 +243,15 @@ export default class App extends Component {
       }
     }
     let betsArrayLength = this.state.Bets.length
-    console.log('App-processCreatedNewBetMain-lastIndex',betsArrayLength)
-    let newBetId = ((this.state.Bets[betsArrayLength-1] === undefined)? 1 : this.state.Bets[betsArrayLength-1].betId + 1)
-    console.log('App-processCreatedNewBetMain-GameName',gameName)
-    console.log('App-processCreatedNewBetMain-subIndexPlayer', subIndexPlayer)
-    console.log('App-processCreatedNewBetMain-PlayerName',playerName)
-    console.log('App-processCreatedNewBetMain-currencyCode',currencyCode)
-    console.log('App-processCreatedNewBetMain-amountBet', amountBet)
-    console.log('ProtectedApp-processCreatedNewBetMain- userIsValid')
+    if(isDevelopment){
+      console.log('App-processCreatedNewBetMain-lastIndex',betsArrayLength)
+      console.log('App-processCreatedNewBetMain-GameName',gameName)
+      console.log('App-processCreatedNewBetMain-subIndexPlayer', subIndexPlayer)
+      console.log('App-processCreatedNewBetMain-PlayerName',playerName)
+      console.log('App-processCreatedNewBetMain-currencyCode',currencyCode)
+      console.log('App-processCreatedNewBetMain-amountBet', amountBet)
+      console.log('ProtectedApp-processCreatedNewBetMain- userIsValid')
+    }
     let userAuthed = {
       Name: null,
       Email: null,
@@ -162,7 +259,9 @@ export default class App extends Component {
       EmailVerified:null,
       Uid: null,
     }
-    console.log('ProtectedApp-processCreatedNewBetMain- userAuthed1',userAuthed)
+    if(isDevelopment){
+      console.log('ProtectedApp-processCreatedNewBetMain- userAuthed1',userAuthed)
+    }
     firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
         // User is signed in.
@@ -174,14 +273,15 @@ export default class App extends Component {
           userAuthed.Uid = user.uid;  // The user's ID, unique to the Firebase project. Do NOT use
                            // this value to authenticate with your backend server, if
                            // you have one. Use User.getToken() instead.
-          console.log('ProtectedApp-processCreatedNewBetMain-user',user)
-          console.log('ProtectedApp-processCreatedNewBetMain-userUid',user.uid)
-          console.log('ProtectedApp-processCreatedNewBetMain- userAuthed3',userAuthed)
+          if(isDevelopment){
+            console.log('ProtectedApp-processCreatedNewBetMain-user',user)
+            console.log('ProtectedApp-processCreatedNewBetMain-userUid',user.uid)
+            console.log('ProtectedApp-processCreatedNewBetMain- userAuthed3',userAuthed)
+         }
           const newBet = {
-            betId:parseInt(newBetId),
-            gameId:parseInt(gameId),
+            gameId:gameId.toString(),
             gameName:gameName,
-            subIndexPlayer: parseInt(subIndexPlayer),
+            subIndexPlayer: subIndexPlayer.toString(),
             playerName:playerName,
             currencyCode: currencyCode,
             amountBet: amountBet,
@@ -189,23 +289,31 @@ export default class App extends Component {
             userId:userAuthed.Uid,
             editBet:false,
           }
-          console.log('ProtectedApp-processCreatedNewBetMain- newBet',newBet)
+          if(isDevelopment){
+            console.log('ProtectedApp-processCreatedNewBetMain- newBet',newBet)
+          }
           //Remote Resources
           BetsListLocal.push(newBet)
         }
-        console.log('ProtectedApp-processCreatedNewBetMain- userAuthed2',userAuthed)
+        if(isDevelopment){
+          console.log('ProtectedApp-processCreatedNewBetMain- userAuthed2',userAuthed)
+        }
       } else {
         // No user is signed in.
+        if(isDevelopment){
           console.log('ProtectedApp-processCreatedNewBetMain-No user is signed in.')
+        }
       }
     })
 
     this.setState({
       displayGameAndBettingSection:true,
       games: this.state.games,
-      bets: this.state.bets,
+      Bets: this.state.Bets,
     })
-    console.log('App-processCreatedNewBetMain-thisState',this.state)
+    if(isDevelopment){
+      console.log('App-processCreatedNewBetMain-thisState',this.state)
+    }
   }
 
    processUpdatedBetMain(allBetsArray, targetKeyId, updatedObject){
@@ -213,27 +321,32 @@ export default class App extends Component {
     BetsListLocal.child(targetKeyId).child('playerName').transaction((currentValue) => (currentValue = updatedObject.playerName))
     BetsListLocal.child(targetKeyId).child('currencyCode').transaction((currentValue) => (currentValue = updatedObject.currencyCode))
     BetsListLocal.child(targetKeyId).child('amountBet').transaction((currentValue) => (currentValue = updatedObject.amountBet))
-
     this.setState({
       displayGamesSection: true,
       displayBettingSection: false,
       games: this.state.games,
 
     })
-    console.log('App-processUpdatedBetMain Method BEGIN')
-    console.log('App-displayGamesSection',this.state.displayGamesSection)
-    console.log('App-displayBettingSection',this.state.displayBettingSection)
-    console.log('App-gamesArray',this.state.games)
-    console.log('App-BetsArray',this.state.Bets)
-    console.log('App-processUpdatedBetMain Method END')
+    if(isDevelopment){
+      console.log('App-processUpdatedBetMain Method BEGIN')
+      console.log('App-displayGamesSection',this.state.displayGamesSection)
+      console.log('App-displayBettingSection',this.state.displayBettingSection)
+      console.log('App-gamesArray',this.state.games)
+      console.log('App-BetsArray',this.state.Bets)
+      console.log('App-processUpdatedBetMain Method END')
+    }
   }
 
   processCancellationUpdatedBetMain(status){
-    console.log('App-processCancellationUpdatedBetMain-stateeeus',status)
     const length = this.state.games.length
-    console.log('App-processCancellationUpdatedBetMain-arrayLength: ',length)
+    if(isDevelopment){
+      console.log('App-processCancellationUpdatedBetMain-stateeeus',status)
+      console.log('App-processCancellationUpdatedBetMain-arrayLength: ',length)
+    }
     for(let i=0; i<length ; i++){
-      console.log('App-processCancellationUpdatedBetMain-gamesArrayElements ',this.state.games[i])
+      if(isDevelopment){
+        console.log('App-processCancellationUpdatedBetMain-gamesArrayElements ',this.state.games[i])
+      }
       this.state.games[i].display = true
     }
     this.setState({
@@ -248,22 +361,27 @@ export default class App extends Component {
       displayGamesSection: true,
       displayBettingSection: false,
       games: this.state.games,
-
     })
-    console.log('App-processDeletedBetMain Method BEGIN')
-    console.log('App-displayGamesSection',this.state.displayGamesSection)
-    console.log('App-displayBettingSection',this.state.displayBettingSection)
-    console.log('App-gamesArray',this.state.games)
-    console.log('App-betsArray',this.state.Bets)
-    console.log('App-processDeletedBetMain Method END')
+    if(isDevelopment){
+      console.log('App-processDeletedBetMain Method BEGIN')
+      console.log('App-displayGamesSection',this.state.displayGamesSection)
+      console.log('App-displayBettingSection',this.state.displayBettingSection)
+      console.log('App-gamesArray',this.state.games)
+      console.log('App-betsArray',this.state.Bets)
+      console.log('App-processDeletedBetMain Method END')
+    }
   }
 
   processCancellationDeletedBetMain(status){
-    console.log('App-processCancellationDeletedBetMain-statuuus',status)
     const length = this.state.games.length
-    console.log('App-processCancellationDeletedBetMain-arrayLength: ',length)
+    if(isDevelopment){
+      console.log('App-processCancellationDeletedBetMain-status',status)
+      console.log('App-processCancellationDeletedBetMain-arrayLength: ',length)
+    }
     for(let i=0; i<length ; i++){
-      console.log('App-processCancellationDeletedBetMain-gamesArrayElements ',this.state.games[i])
+      if(isDevelopment){
+        console.log('App-processCancellationDeletedBetMain-gamesArrayElements ',this.state.games[i])
+      }
       this.state.games[i].display = true
     }
     this.setState({
@@ -272,11 +390,26 @@ export default class App extends Component {
     })
   }
 
+  componentWillMount(){
+     this.updateDimensions()
+  }
+  updateDimensions() {
+       this.setState({
+          windowHeight: window.innerHeight + 'px',
+         windowWidth: window.innerWidth + 'px',
+       })
+   }
+
+   componentWillUnmount() {
+       window.removeEventListener("resize", this.updateDimensions);
+   }
+
   render() {
     //Styles BEGIN==
     const styleBets = {
-       position: 'absolute',
-       top: '350px'
+       position: 'relative',
+       top:'10px',
+       width: '750px',
     }
 
     const styleGames ={
@@ -284,8 +417,8 @@ export default class App extends Component {
       borderRadius:'15px',
       height: '200px',
       padding: '20px',
-      position: 'absolute',
-      top: '140px',
+      position: 'relative',
+      top:'-5px',
       width: '750px',
     }
 
@@ -294,51 +427,43 @@ export default class App extends Component {
       overflowY: 'auto',
       padding: '20px',
     };
+
+    if(isDevelopment){
+      console.log('App-render-windowWidth',this.state.windowWidth)
+      console.log('App-render-styleGames',styleGames)
+      console.log('App-render-BetsObjectCollection',this.state.Bets)
+    }
     //Styles END====
-
-
-    console.log('App-render-BetsObjectCollection',this.state.Bets)
     let betArrayValues =_.values(this.state.Bets)
-    console.log('App-render-BetsArrayValues',betArrayValues)
-    let betArrayMap = _.map(this.state.Bets, (bet,id)=>(
-       {
-         id: id,
-         betId:bet.betId,
-         gameId:bet.gameId,
-         gameName:bet.gameName,
-         subIndexPlayer: bet.subIndexPlayer,
-         playerName:bet.playerName,
-         currencyCode: bet.currencyCode,
-         amountBet: bet.amountBet,
-         username: bet.username,
-         userId:bet.userId,
-         editBet:bet.editBet,
-       }
-    ))
-    console.log('App-render-BetsArrayMap',betArrayMap)
     let arrayFilterByDisplayElement = (arrayElement) =>{
       return arrayElement.display===true
     }
     let renderingArray = this.state.games.filter(arrayFilterByDisplayElement)
-    console.log("App-render-filtered Bets", renderingArray)
-
-    console.log('App-Render-state.DisplayGamesSection',this.state.displayGamesSection)
-    console.log('App-Render-state.BettingSection',this.state.displayBettingSection)
-    console.log('App-Render-state.(full state)',this.state)
+    if(isDevelopment){
+      console.log('App-render-BetsArrayValues',betArrayValues)
+      console.log("App-render-filtered Bets", renderingArray)
+      console.log('App-Render-state.DisplayGamesSection',this.state.displayGamesSection)
+      console.log('App-Render-state.BettingSection',this.state.displayBettingSection)
+      console.log('App-Render-state.(full state)',this.state)
+    }
     if(this.state.displayGameAndBettingSection===true){
       return (
         <div className="App">
+          <span> Hello: {this.state.userEmail}</span>
           <h2>Super Betting Bucket</h2>
           <div style={styleGames}>
           <div style={divStyleGamesScrollable}>
-
-              {_.map(this.state.games,(game, id)=>(
+          { (this.state.games !== undefined) ? this.state.games.map(game =>(
                 <DisplayAllGames
                     key={game.id}
                     gameId={game.id}
                     gameText={game.text}
-                    gameDisplay={game.display}
+                    gameAwayTeamCityAndName={game.playersInGame[0].player}
+                    gameHomeTeamCityAndName={game.playersInGame[1].player}
                     gamePlayersArray={game.playersInGame}
+                    gameLocation={game.location}
+                    gameDate={game.date}
+                    gameTime={game.time}
                     gameType ={game.type}
                     gameDisplay={game.display}
                     gameButtonText={'Select your Bet'}
@@ -346,8 +471,8 @@ export default class App extends Component {
                     onSelectedGame={this.processSelectedGame}
                     >
                 </DisplayAllGames>
-             ))}
-
+              )) :" Loading Data..."
+           }
           </div>
           </div>
             <div style={styleBets}>
@@ -373,9 +498,15 @@ export default class App extends Component {
            key={game.id}
            gameId={game.id}
            gameText={game.text}
+           gameAwayTeamCityAndName={game.playersInGame[0].player}
+           gameHomeTeamCityAndName={game.playersInGame[1].player}
+           gameLocation={game.location}
+           gameDate={game.date}
+           gameTime={game.time}
            gameDisplay={game.display}
            gamePlayersArray={game.playersInGame}
            gameType ={game.type}
+           gameDisplay={game.display}
            gameButtonText={'Confirm and Make a Bet'}
            displayCancelButton={true}
            onSelectedGame={this.processSelectedGame}
@@ -391,6 +522,5 @@ export default class App extends Component {
         <div>  'Nothing to render' </div>
       )
     }
-
   }
 }

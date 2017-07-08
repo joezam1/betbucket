@@ -10,6 +10,7 @@ function setErrorMsg(error){
   }
 }
 
+const isDevelopment = false
 export default class Login extends Component{
   state ={
     loginMessage: null
@@ -21,10 +22,10 @@ export default class Login extends Component{
     let passwordEncoded = (require('js-htmlencode').htmlEncode(`${this.pw.value}`)).trim()
     let resultPassword = document.getElementById('resultPassword')
     let validation = 0
-
-    console.log('emailClassValue:',emailEncoded)
-    console.log('pwdClassValue:',passwordEncoded)
-
+    if(isDevelopment){
+      console.log('Login-LoginUser-emailClassValue:',emailEncoded)
+      console.log('Login-LoginUser-pwdClassValue:',passwordEncoded)
+    }
     function validateEmail(email) {
             var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
             return re.test(email)
@@ -40,7 +41,9 @@ export default class Login extends Component{
     } else {
       resultEmail.innerText =require('js-htmlencode').htmlDecode(`${ emailEncoded} is not valid :( `)
       resultEmail.style.color ="red"
-      console.log('resultEmail.innerText',resultEmail.innerText)
+      if(isDevelopment){
+        console.log('Login-LoginUser-resultEmail.innerText',resultEmail.innerText)
+      }
     }
     //isValidEmail END======
     //isValidPassword BEGIN===
@@ -50,17 +53,23 @@ export default class Login extends Component{
     } else {
       resultPassword.innerText =require('js-htmlencode').htmlDecode(`${ passwordEncoded} is not strong :( `)
       resultPassword.style.color ="red"
-      console.log('resultPassword.innerText',resultPassword.innerText)
+      if(isDevelopment){
+        console.log('Login-LoginUser-resultPassword.innerText',resultPassword.innerText)
+      }
     }
     //isValidPassword END=====
     if(validation === 2){
-      console.log('inside validation')
+      if(isDevelopment){
+        console.log('Login-LoginUser-inside validation')
+      }
         login(emailEncoded,passwordEncoded)
         .catch((error)=>{
           this.setState(setErrorMsg('Invalid username/password.'))
         })
         //Validated User
-        console.log('login-loginUser- userIsValid')
+        if(isDevelopment){
+        console.log('Login-loginUser-userIsValid')
+        }
       }
   }
 
@@ -76,7 +85,6 @@ export default class Login extends Component{
       float:'right',
       position: 'relative',
       top: '-20px',
-
     };
     //Styles END====
     return (

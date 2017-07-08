@@ -1,6 +1,6 @@
 import React, {Component} from 'react'
 
-
+const isDevelopment = false
 export default class DeleteBet extends Component{
   constructor(props){
     super(props)
@@ -9,7 +9,6 @@ export default class DeleteBet extends Component{
     this.deleteBet = this.deleteBet.bind(this)
     this.cancelDeleteBet = this.cancelDeleteBet.bind(this)
   }
-  //==
   componentWillMount(){
      this.updateDimensions()
   }
@@ -26,72 +25,75 @@ export default class DeleteBet extends Component{
        window.removeEventListener("resize", this.updateDimensions);
    }
 
-  //==
-
   deleteBet(event){
-    console.log('deleteBet EventTarget',event.target)
     const tg = event.target
-    console.log('deleteBet-eventTarget',tg)
     const targetKeyId = tg.dataset.keyid
-    console.log('deleteBet-targetKeyId',targetKeyId)
     const gameId = tg.dataset.gameid
-    console.log("deleteBet-GameId",gameId)
+    if(isDevelopment){
+      console.log('DeleteBet-deleteBet-EventTarget',event.target)
+      console.log('DeleteBet-deleteBet-targetKeyId',targetKeyId)
+      console.log("DeleteBet-deleteBet-GameId",gameId)
+    }
     this.props.onDeleteBet(targetKeyId)
   }
 
   cancelDeleteBet(event){
-    console.log('DeleteBet-cancelDeleteBet-EventTarget',event.target)
+    if(isDevelopment){
+      console.log('DeleteBet-cancelDeleteBet-EventTarget',event.target)
+    }
     const tg = event.target
     this.props.onCancelDeletionBet(true)
   }
 
   render(){
-//==
-const backgroundStyle = {
-  backgroundColor:'#282828',
-  backgroundSize:'16px 16px',
-  height:this.state.windowHeight,
-  left: -100,
-  opacity:0.4,
-  position:'absolute',
-  top:-300,
-  width:this.state.windowWidth,
+  const backgroundStyle = {
+    backgroundColor:'#282828',
+    backgroundSize:'16px 16px',
+    height:this.state.windowHeight,
+    left: -100,
+    opacity:0.4,
+    position:'absolute',
+    top:-300,
+    width:this.state.windowWidth,
 
-  zIndex:20,
-}
+    zIndex:20,
+  }
 
-const editWindowStyle = {
-  backgroundColor: 'white',
-  border:'5px solid #C0C0C0',
-  borderRadius: 15,
-  height: 550,
-  left: 50,
-  opacity:1,
-  overflowY: 'auto',
-  padding:'20px 20px 20px 40px',
-  position:'absolute',
-  textAlign: 'left',
-  top:'-200px',
-  width:400,
-  zIndex:50,
-}
-const btnPositioning ={
-  float:'left',
-  position:'relative',
-  top:'20px',
-  left:-3,
-}
+  const editWindowStyle = {
+    backgroundColor: 'white',
+    border:'5px solid #C0C0C0',
+    borderRadius: 15,
+    height: 550,
+    left: 50,
+    opacity:1,
+    overflowY: 'auto',
+    padding:'20px 20px 20px 40px',
+    position:'absolute',
+    textAlign: 'left',
+    top:'-200px',
+    width:400,
+    zIndex:50,
+  }
 
-    console.log('DeleteBet-render-BetId',this.props.deleteBetId)
-    console.log('DeleteBet-render-GameId',this.props.deleteGameId)
-    console.log('DeleteBet-render-GameName',this.props.deleteGameName)
-    console.log('DeleteBet-render-PlayersInGameList',this.props.deletePlayersInGameList)
-    console.log('DeleteBet-render-SubIndexPlayer',this.props.deleteSubIndexPlayer)
-    console.log('DeleteBet-render-PlayerName',this.props.deletePlayerName)
-    console.log('DeleteBet-render-CurrencyCode',this.props.deleteCurrencyCode)
-    console.log('DeleteBet-render-AmountBet',this.props.deleteAmountBet)
-    console.log('DeleteBet-render-Username',this.props.deleteUsername)
-    console.log('DeleteBet-render-UserId',this.props.deleteUserId)
+  const btnPositioning ={
+    float:'left',
+    position:'relative',
+    top:'20px',
+    left:-3,
+  }
+  
+    if(isDevelopment){
+      console.log('DeleteBet-render-BetId',this.props.deleteBetId)
+      console.log('DeleteBet-render-GameId',this.props.deleteGameId)
+      console.log('DeleteBet-render-GameName',this.props.deleteGameName)
+      console.log('DeleteBet-render-PlayersInGameList',this.props.deletePlayersInGameList)
+      console.log('DeleteBet-render-SubIndexPlayer',this.props.deleteSubIndexPlayer)
+      console.log('DeleteBet-render-PlayerName',this.props.deletePlayerName)
+      console.log('DeleteBet-render-CurrencyCode',this.props.deleteCurrencyCode)
+      console.log('DeleteBet-render-AmountBet',this.props.deleteAmountBet)
+      console.log('DeleteBet-render-Username',this.props.deleteUsername)
+      console.log('DeleteBet-render-UserId',this.props.deleteUserId)
+    }
     return(
 
     <div>
@@ -141,5 +143,4 @@ const btnPositioning ={
       </div>
     )
   }
-
 }

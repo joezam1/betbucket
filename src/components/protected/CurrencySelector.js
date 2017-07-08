@@ -1,36 +1,37 @@
 import React,{Component} from 'react'
+
+const isDevelopment = false
 export default class CurrencySelector extends Component{
   constructor(props){
     super(props)
     this.state = {value:''};
     this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   handleChange(event) {
      this.setState({
        value: event.target.value
      });
-     console.log("eventValue",event.target.value)
-     console.log("setStateValue",this.state.value)
+     if(isDevelopment){
+       console.log("CurrencySelector-handleChange-eventValue",event.target.value)
+       console.log("CurrencySelector-handleChange-setStateValue",this.state.value)
+     }
      this.props.selectedCurrency(event.target.value)
    }
 
-  handleSubmit(event) {
-    alert('Your favorite flavor is: ' + this.state.value);
-    event.preventDefault();
-  }
-
-
   render(){
     const targetElem = document.getElementById('currencySelector')
-    console.log('currencyTarget',this.props.updatedCurrency)
-    console.log("consoleLogCurrencyTargetElem",targetElem)
+
     const findSelectedCurrencyType =()=>{
-    console.log('inside Variable findSelectedCurrencyType')
+
     const targetElem = document.getElementById('currencySelector')
     targetElem.value = this.props.updatedCurrency
-    console.log('currencyTarget',targetElem.value)
+    if(isDevelopment){
+      console.log('CurrencySelector-render-currencyTarget',this.props.updatedCurrency)
+      console.log("CurrencySelector-render-TargetElem",targetElem)
+      console.log('CurrencySelector-render-insideFunction findSelectedCurrencyType')
+      console.log('CurrencySelector-render-currencyTarget',targetElem.value)
+    }
     return targetElem.value
     }
 
